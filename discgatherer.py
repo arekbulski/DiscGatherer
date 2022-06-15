@@ -16,6 +16,13 @@ if os.path.exists(databasename):
 		serializeddata = f.read()
 	collection = bson.loads(serializeddata)
 
+# The dafualt way of using this program is through the CLI commandline. Even if there is a way of exposing the collection through FUSE, adding new discs to your collection still requires you to use CLI syntax. Learn it.
+description = "This is the DiscGatherer software. Its purpose is to help you manage your collection of CD DVD and Bluray dics. The dafualt way of using this program is through the CLI commandline. Even if there is a way of exposing the collection through FUSE, adding new discs to your collection still requires you to use CLI syntax. Learn it."
+parser = argparse.ArgumentParser(description=description, add_help=False)
+parser.add_argument("-h", "--help", action="help", help="Display documentation.")
+parser.add_argument("-a", "--add", action="store_true", help="Add /dev/sr0 disc to your collection.")
+args = parser.parse_args()
+
 # TODO: For now the entire database is auto-saved. It should only save if changed, and only using atomic file replacement. Stay tuned.
 if autosave:
 	serializeddata = bson.dumps(collection)
