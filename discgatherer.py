@@ -72,8 +72,10 @@ if args.add:
 			pathname = os.path.join(path, entryname)
 			entrystat = os.lstat(pathname)
 			if stat.S_ISREG(entrystat.st_mode):
+				# TODO: Remove name key?
 				entries[entryname] = dict(name=entryname, type="file", size=entrystat.st_size, atime=entrystat.st_atime, mtime=entrystat.st_mtime, ctime=entrystat.st_ctime)
 			if stat.S_ISDIR(entrystat.st_mode):
+				# TODO: Remove name key?
 				entries[entryname] = dict(name=entryname, type="folder", entries=walk(pathname), atime=entrystat.st_atime, mtime=entrystat.st_mtime, ctime=entrystat.st_ctime)
 		return entries
 
@@ -84,7 +86,6 @@ if args.add:
 		pprint.pprint(disc)
 		print()
 
-	# TODO: Maybe use pickle instead of bson, ids work in a funky way?
 	nextid = 1 if len(collection)==0 else max(map(int, collection.keys()))+1
 	collection[nextid] = disc
 	if args.verbose:
@@ -106,7 +107,7 @@ if args.add:
 # TODO: What does happen when you try to add Audio CD instead?
 # Needs testing.
 
-# TODO: For now the entire database is auto-saved. It should only save if changed, and only using atomic file replacement. Stay tuned.
+# TODO: It should only be saved using atomic file replacement. Stay tuned.
 if autosave:
 	serializeddata = bson.dumps(collection)
 	with open(databasename, "w+b") as f:
