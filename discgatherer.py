@@ -9,7 +9,7 @@ import os, argparse, subprocess, pprint, stat
 # By default, the collection is stored in `default.db` but you could change that if you want. If the database file does not exist, the program just assumes that the database is empty.
 collection = {}
 databasename = "./default.db"
-autosave = True
+autosave = False
 
 if os.path.exists(databasename):
 	with open(databasename, "r+b") as f:
@@ -91,6 +91,8 @@ if args.add:
 		print("Your disc has been added under ID/label: ")
 		print(f"{nextid} -> {disclabel}")
 		print()
+
+	autosave = True
 
 	print("The disc was successfully scanned and added.")
 	print()
