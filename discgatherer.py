@@ -4,7 +4,7 @@
 import bson
 
 # Following are standard library imports. They should not fail, ever.
-import os, argparse, subprocess, pprint
+import os, argparse, subprocess, pprint, stat
 
 # By default, the collection is stored in `default.db` but you could change that if you want. If the database file does not exist, the program just assumes that the database is empty.
 collection = {}
@@ -65,19 +65,36 @@ if args.add:
 		print("Path up to the mountpoint should be: ")
 		print(repr(fspath))
 		print()
-		print("Files and folders at root: ")
-		for fn in os.listdir(fspath):
-			print(repr(fn))
+
+	def walk(path):
+		entries = {}
+		for entryname in os.listdir(path):
+			pathname = os.path.join(path, entryname)
+			entrystat = os.lstat(pathname)
+			if stat.S_ISREG(entrystat.st_mode):
+				entries[entryname] = dict(name=entryname, type="file", size=entrystat.st_size, atime=entrystat.st_atime, mtime=entrystat.st_mtime, ctime=entrystat.st_ctime)
+			if stat.S_ISDIR(entrystat.st_mode):
+				entries[entryname] = dict(name=entryname, type="folder", entries=walk(pathname), atime=entrystat.st_atime, mtime=entrystat.st_mtime, ctime=entrystat.st_ctime)
+		return entries
+
+	tree = walk(fspath)
+	disc = dict(label=disclabel, items=items, content=tree)
+	if args.verbose:
+		print("The disc content was found as follows: ")
+		pprint.pprint(disc)
 		print()
-		print("All files and folders: ")
-		for (root,dirs,files) in os.walk(fspath, topdown=False):
-			print(f"in {repr(root)} there is:")
-			for d in dirs:
-				print(f"  a folder {repr(d)}")
-			for f in files:
-				print(f"  a file {repr(f)}")
+
+	# TODO: Maybe use pickle instead of bson, ids work in a funky way?
+	nextid = 1 if len(collection)==0 else max(map(int, collection.keys()))+1
+	collection[nextid] = disc
+	if args.verbose:
+		print("Your disc has been added under ID/label: ")
+		print(f"{nextid} -> {disclabel}")
 		print()
-	
+
+	print("The disc was successfully scanned and added.")
+	print()
+
 # TODO: What to do when there is more than one optical drive or disc?
 # Possible answer: Maybe just ignore the other drives and use the first?
 # TODO: What does happen when there is no disc in the optical drive?
