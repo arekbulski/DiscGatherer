@@ -29,8 +29,9 @@ parser = argparse.ArgumentParser(description=description, add_help=False)
 parser.add_argument("-h", "--help", action="help", help="Display documentation.")
 parser.add_argument("-a", "--add", action="store_true", help="Add /dev/sr0 disc to your collection. Can be verbose.")
 parser.add_argument("-L", "--label", action="store", help="Use provided label instead of detecting it from the actual disc. Note that the provided label must be in quotes.")
+parser.add_argument("-b", "--brief", action="store_true", help="Briefly list all discs. Can be verbose.")
 parser.add_argument("-l", "--list", action="store_true", help="List all discs, folders, and files in your collection. Ideal for grep. Can be verbose.")
-parser.add_argument("-r", "--remove", action="store", help="Remove a disc under given ID. The IDs are displayed like `[ID 1]` in listing mode.")
+parser.add_argument("-r", "--remove", action="store", help="Remove a disc under given ID. The IDs are displayed in both brief and listing modes.")
 parser.add_argument("-v", "--verbose", action="store_true", help="Print additional information when adding or listing discs.")
 args = parser.parse_args()
 
@@ -158,6 +159,19 @@ if args.add:
 	print()
 
 	autosave = True
+
+#-------------------------------------------------------------------------------
+# Brief listing mode.
+
+if args.brief:
+	# Displays all discs briefly (only IDs and labels and optionally sizes).
+	for (entryid,entry) in collection.items():
+		if args.verbose:
+			size = formatsize(entry["size"])
+			print(f"[ID {entryid}] {entry['type']} {entry['label']} [size: {size}]:")
+		else:
+			print(f"[ID {entryid}] {entry['type']} {entry['label']}")
+	print()
 
 #-------------------------------------------------------------------------------
 # Listing discs mode.
