@@ -30,6 +30,7 @@ parser.add_argument("-h", "--help", action="help", help="Display documentation."
 parser.add_argument("-a", "--add", action="store_true", help="Add /dev/sr0 disc to your collection. Can be verbose.")
 parser.add_argument("-L", "--label", action="store", help="Use provided label instead of detecting it from the actual disc. Note that the provided label must be in quotes.")
 parser.add_argument("-l", "--list", action="store_true", help="List all discs, folders, and files in your collection. Ideal for grep. Can be verbose.")
+parser.add_argument("-r", "--remove", action="store", help="Remove a disc under given ID. The IDs are displayed like `[ID 1]` in listing mode.")
 parser.add_argument("-v", "--verbose", action="store_true", help="Print additional information when adding or listing discs.")
 args = parser.parse_args()
 
@@ -166,15 +167,32 @@ if args.list:
 	for (entryid,entry) in collection.items():
 		if args.verbose:
 			size = formatsize(entry["size"])
-			print(f"[{entryid}] {entry['type']} {entry['label']} [size: {size}]:")
+			print(f"[ID {entryid}] {entry['type']} {entry['label']} [size: {size}]:")
 			walk_print(entry["content"], 1)
 			print()
 		else:
-			print(f"[{entryid}] {entry['type']} {entry['label']}")
+			print(f"[ID {entryid}] {entry['type']} {entry['label']}")
 			walk_print(entry["content"], 1)
 			print()
 
 # TODO: How about using colorama to display names in bold?
+
+#-------------------------------------------------------------------------------
+# Removing an entry.
+
+if args.remove:
+	entryid = args.remove
+	if entryid not in collection.keys():
+		print("There is no such disc ID in your collection.")
+		print()
+		exit(1)
+
+	disclabel = collection[entryid]["label"]
+	del collection[entryid]
+	autosave = True
+	print(f"Entry under following ID/label was successfully removed.")
+	print(f"{entryid} -> {disclabel}")
+	print()
 
 #-------------------------------------------------------------------------------
 # Here be dragons?
