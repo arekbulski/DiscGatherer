@@ -27,8 +27,9 @@ if os.path.exists(databasename):
 description = "This is the DiscGatherer software. Its purpose is to help you manage your collection of CD DVD and Bluray dics. The default way of using this program is through the CLI command-line. This covers both listing your discs, adding them, searching for specific files, etc. Most operations can only be done using CLI syntax. Learn it."
 parser = argparse.ArgumentParser(description=description, add_help=False)
 parser.add_argument("-h", "--help", action="help", help="Display documentation.")
-parser.add_argument("-a", "--add", action="store_true", help="Add /dev/sr0 disc to your collection.")
-parser.add_argument("-l", "--list", action="store_true", help="List all discs, folders, and files in your collection. Ideal for grep.")
+parser.add_argument("-a", "--add", action="store_true", help="Add /dev/sr0 disc to your collection. Can be verbose.")
+parser.add_argument("-L", "--label", action="store", help="Use provided label instead of detecting it from the actual disc. Note that the provided label must be in quotes.")
+parser.add_argument("-l", "--list", action="store_true", help="List all discs, folders, and files in your collection. Ideal for grep. Can be verbose.")
 parser.add_argument("-v", "--verbose", action="store_true", help="Print additional information when adding or listing discs.")
 args = parser.parse_args()
 
@@ -53,7 +54,7 @@ if args.add:
 		print()
 	items = {k:v for (k,v) in filter(select, map(parse, outputlines))}
 	if args.verbose:
-		print("Interrogating the disc drive yielded following (FILTERED): ")
+		print("Interrogating the disc drive yielded following (among others): ")
 		pprint.pprint(items)
 		print()
 	if len(items) <= 2:
@@ -64,6 +65,8 @@ if args.add:
 	# TODO: Is this the correct value for a label?
 	disclabel = items.get("ID_FS_LOGICAL_VOLUME_ID", None) or items.get("ID_FS_VOLUME_SET_ID", None) or items.get("ID_FS_LABEL_ENC", None) or "[unknown label]"
 	disclabel = disclabel.encode().decode("unicode-escape")
+	if args.label is not None:
+		disclabel = args.label
 	if args.verbose:
 		print("The label used for the disc: ")
 		print(repr(disclabel))
