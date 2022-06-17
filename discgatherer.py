@@ -84,6 +84,12 @@ def walk_print(entries, indentlevel):
 # Adding a disc mode.
 
 if args.add:
+	# Before the disc is scanned, there must be at least one drive present.
+	if not os.path.exists("/dev/sr0"):
+		print("There seems to be no drive present, aborting.")
+		print()
+		exit(1)
+
 	# First thing: lets interrogate `udevadm info` about the `/dev/sr0` disc. This command interrogates both the optical drive as well as the optical disc inside of it. It returns a lot of data about both, that needs to be parsed and sifted through.
 	sp = subprocess.run(["udevadm","info","-q","property","-x","-n","sr0"], stdout=subprocess.PIPE)
 	output = sp.stdout.decode()
