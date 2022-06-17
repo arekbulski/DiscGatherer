@@ -86,28 +86,28 @@ if args.add:
 			if stat.S_ISREG(entrystat.st_mode):
 				entries[entryname] = dict(type="file", size=entrystat.st_size, atime=entrystat.st_atime, mtime=entrystat.st_mtime, ctime=entrystat.st_ctime)
 			if stat.S_ISDIR(entrystat.st_mode):
-				entries[entryname] = dict(type="folder", entries=walk(pathname), atime=entrystat.st_atime, mtime=entrystat.st_mtime, ctime=entrystat.st_ctime)
+				branch = walk(pathname)
+				size = sum(f["size"] for f in branch.values())
+				entries[entryname] = dict(type="folder", size=size, entries=branch, atime=entrystat.st_atime, mtime=entrystat.st_mtime, ctime=entrystat.st_ctime)
 		return entries
 
 	tree = walk(fspath)
-	disc = dict(type="disc", label=disclabel, items=items, content=tree)
+	size = sum(f["size"] for f in tree.values())
+	disc = dict(type="disc", label=disclabel, items=items, content=tree, size=size)
 	if args.verbose:
 		print("The disc content was found as follows: ")
-		# TODO: Make a better display for the tree. PPring is sucky.
+		# TODO: Make a better display for the tree. pprint is sucky.
 		pprint.pprint(disc)
 		print()
 
 	nextid = 1 if len(collection)==0 else max(map(int, collection.keys()))+1
 	collection[nextid] = disc
-	if args.verbose:
-		print("Your disc has been added under ID/label: ")
-		print(f"{nextid} -> {disclabel}")
-		print()
+
+	print("The disc was successfully scanned and added under ID/label: ")
+	print(f"{nextid} -> {disclabel}")
+	print()
 
 	autosave = True
-
-	print("The disc was successfully scanned and added.")
-	print()
 
 #-------------------------------------------------------------------------------
 # Listing discs mode.
@@ -132,17 +132,6 @@ if args.list:
 	def indent(level):
 		return " " * 4 * level
 
-	# This function computes sizes of folders, recursively.
-	def prewalk(entries):
-		summarysize = 0
-		for (entryname,entry) in entries.items():
-			if entry["type"] == "file":
-				summarysize += entry["size"]
-		for (entryname,entry) in entries.items():
-			if entry["type"] == "folder":
-				summarysize += prewalk(entry["entries"])
-		return summarysize
-
 	# This function prints out folders, recursively.
 	def walk(entries, indentlevel):
 		# Displays sub-files before sub-folders.
@@ -158,7 +147,7 @@ if args.list:
 		for (entryname,entry) in entries.items():
 			if entry["type"] == "folder":
 				if args.verbose:
-					size = formatsize(prewalk(entry["entries"]))
+					size = formatsize(entry["size"])
 					print(f"{indent(indentlevel)}a folder {entryname} [size: {size}]:")
 				else:
 					print(f"{indent(indentlevel)}a folder {entryname}:")
@@ -167,7 +156,7 @@ if args.list:
 	# Displays all discs, recursively.
 	for (entryid,entry) in collection.items():
 		if args.verbose:
-			size = formatsize(prewalk(entry["content"]))
+			size = formatsize(entry["size"])
 			print(f"[{entryid}] {entry['type']} {entry['label']} [size: {size}]:")
 			walk(entry["content"], 1)
 			print()
