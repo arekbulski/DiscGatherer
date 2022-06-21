@@ -27,10 +27,10 @@ if os.path.exists(databasename):
 description = "This is the DiscGatherer software. Its purpose is to help you manage your collection of CD DVD and Bluray dics. The default way of using this program is through the CLI command-line. This covers both listing your discs, adding them, searching for specific files, etc. Most operations can only be done using CLI syntax. Learn it."
 parser = argparse.ArgumentParser(description=description, add_help=False)
 parser.add_argument("-h", "--help", action="help", help="Display documentation.")
-parser.add_argument("-a", "--add", action="store_true", help="Add /dev/sr0 disc to your collection. Can be verbose.")
+parser.add_argument("-a", "--add", action="store_true", help="Add /dev/sr0 disc to your collection. Can be verbose, in which case you should use less command.")
 parser.add_argument("-L", "--label", action="store", help="Use provided label instead of detecting it from the actual disc. Note that the provided label must be in quotes.")
 parser.add_argument("-b", "--brief", action="store_true", help="Briefly list all discs. Can be verbose.")
-parser.add_argument("-l", "--list", action="store_true", help="List all discs, folders, and files in your collection. Ideal for grep. Can be verbose.")
+parser.add_argument("-l", "--list", action="store_true", help="List all discs, folders, and files in your collection. Ideal for grep. Can be verbose. Whether you use verbose mode or not, you should use less or grep command.")
 parser.add_argument("-r", "--remove", action="store", help="Remove a disc under given ID. The IDs are displayed in both brief and listing modes.")
 parser.add_argument("-v", "--verbose", action="store_true", help="Print additional information when adding or listing discs.")
 args = parser.parse_args()
@@ -78,8 +78,6 @@ def walk_print(entries, indentlevel):
 				print(f"{indent(indentlevel)}a folder {entryname}:")
 			walk_print(entry["entries"], indentlevel+1)
 
-
-
 #-------------------------------------------------------------------------------
 # Adding a disc mode.
 
@@ -106,7 +104,7 @@ if args.add:
 		print("Interrogating the disc drive yielded following (ALL ENTRIES): ")
 		pprint.pprint(items)
 		print()
-	# 
+	# END TODO
 	items = {k:v for (k,v) in filter(select, map(parse, outputlines))}
 	if args.verbose:
 		print("Interrogating the disc drive yielded following (among others): ")
@@ -116,8 +114,6 @@ if args.add:
 		print("There seems to be no disc present, aborting.")
 		print()
 		exit(1)
-	# TODO: Allow overriding the disc label with an explicit one.
-	# TODO: Is this the correct value for a label?
 	disclabel = items.get("ID_FS_LOGICAL_VOLUME_ID", None) or items.get("ID_FS_VOLUME_SET_ID", None) or items.get("ID_FS_LABEL_ENC", None) or "[unknown label]"
 	disclabel = disclabel.encode().decode("unicode-escape")
 	if args.label is not None:
@@ -147,6 +143,7 @@ if args.add:
 				branch = walk_adding(pathname)
 				size = sum(f["size"] for f in branch.values())
 				entries[entryname] = dict(type="folder", size=size, entries=branch, atime=entrystat.st_atime, mtime=entrystat.st_mtime, ctime=entrystat.st_ctime)
+			# TODO: You should index symlinks as well.
 		return entries
 
 	tree = walk_adding(fspath)
@@ -159,12 +156,10 @@ if args.add:
 
 	nextid = 1 if len(collection)==0 else max(map(int, collection.keys()))+1
 	collection[nextid] = disc
-
+	autosave = True
 	print("The disc was successfully scanned and added under ID/label: ")
 	print(f"{nextid} -> {disclabel}")
 	print()
-
-	autosave = True
 
 #-------------------------------------------------------------------------------
 # Brief listing mode.
@@ -195,7 +190,10 @@ if args.list:
 			walk_print(entry["content"], 1)
 			print()
 
-# TODO: How about using colorama to display names in bold?
+# TODO: How about using colorama to display names in bold or color?
+
+#-------------------------------------------------------------------------------
+# TODO: Searching recursively for a substring/subword.
 
 #-------------------------------------------------------------------------------
 # Removing an entry.
@@ -213,6 +211,9 @@ if args.remove:
 	print(f"Entry under following ID/label was successfully removed.")
 	print(f"{entryid} -> {disclabel}")
 	print()
+
+#-------------------------------------------------------------------------------
+# TODO: Renaming an entry label.
 
 #-------------------------------------------------------------------------------
 # Here be dragons?
