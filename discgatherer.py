@@ -32,6 +32,8 @@ parser.add_argument("-L", "--label", action="store", help="Use provided label in
 parser.add_argument("-b", "--brief", action="store_true", help="Briefly list all discs. Can be verbose.")
 parser.add_argument("-l", "--list", action="store_true", help="List all discs, folders, and files in your collection. Ideal for grep. Can be verbose. Whether you use verbose mode or not, you should use less or grep command.")
 parser.add_argument("-r", "--remove", action="store", help="Remove a disc under given ID. The IDs are displayed in both brief and listing modes.")
+parser.add_argument("-s", "--search", action="store", help="Search for given case insensitive words in your collection. More than one word needs to be provided in quotes.")
+parser.add_argument("-S", "--strict", action="store_true", help="Modify how search mode works. Strict search should yield less false positives than a normal search mode.")
 parser.add_argument("-v", "--verbose", action="store_true", help="Print additional information when adding or listing discs.")
 args = parser.parse_args()
 
@@ -77,6 +79,38 @@ def walk_print(entries, indentlevel):
 			else:
 				print(f"{indent(indentlevel)}a folder {entryname}:")
 			walk_print(entry["entries"], indentlevel+1)
+
+# This function decides whether a file or folder name matches a search criteria.
+def contains(subwords, searchin, strict):
+	subwords = subwords.lower()
+	searchin = searchin.lower()
+	if strict:
+		separators = "`~!@#$%^&*()-_=+[{]}\\|;:\'\",<.>/?"
+		for sep in separators:
+			searchin = searchin.replace(sep, " ")
+		searchinparts = searchin.split()
+		return all(subword in searchinparts for subword in subwords.split())
+	else:
+		return all(subword in searchin for subword in subwords.split())
+
+def walk_search(entries):
+	# The `entries` formal parameter is a dictionary. Its keys are file/folder names, while the dict values are either dict(type="file", ...) or dict(type="folder", ...).
+	output = {}
+	for (entryname,entry) in entries.items():
+		# A file is included in search results on a simple basis: either the file names contains all search words or not. This is rather straightforward.
+		if entry["type"] == "file":
+			if contains(args.search, entryname, args.strict):
+				output[entryname] = entry
+		# A folder is included in search results if either (1) its name contains all search words, or (2) there exists a file or folder somewhere down its subentries whos name is a match.
+		if entry["type"] == "folder":
+			if contains(args.search, entryname, args.strict):
+				output[entryname] = entry
+			else:
+				walked = walk_search(entry["entries"])
+				if walked:
+					# Note that not all info is preserved (like ctime atime are missing) but that is beside the point. Those info are not displayed anyway.
+					output[entryname] = dict(type="folder", size=entry["size"], mtime=entry["mtime"], entries=walked)
+	return output
 
 #-------------------------------------------------------------------------------
 # Adding a disc mode.
@@ -193,7 +227,16 @@ if args.list:
 # TODO: How about using colorama to display names in bold or color?
 
 #-------------------------------------------------------------------------------
-# TODO: Searching recursively for a substring/subword.
+# Searching recursively for substrings/subwords.
+
+if args.search:
+	for (entryid,entry) in collection.items():
+		filtered = walk_search(entry["content"])
+		if filtered:
+			size = formatsize(entry["size"])
+			print(f"[ID {entryid}] {entry['type']} {entry['label']} [size: {size}]:")
+			walk_print(filtered, 1)
+			print()
 
 #-------------------------------------------------------------------------------
 # Removing an entry.
