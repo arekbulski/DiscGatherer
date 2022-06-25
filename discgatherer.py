@@ -34,7 +34,7 @@ parser.add_argument("-l", "--list", action="store_true", help="List all discs, f
 parser.add_argument("-r", "--remove", action="store", help="Remove a disc under given ID. The IDs are displayed in both brief and listing modes.")
 parser.add_argument("-s", "--search", action="store", help="Search for given case insensitive words in your collection. More than one word needs to be provided in quotes.")
 parser.add_argument("-S", "--strict", action="store_true", help="Modify how search mode works. Strict search should yield less false positives than a normal search mode.")
-parser.add_argument("-v", "--verbose", action="store_true", help="Print additional information when adding or listing discs.")
+parser.add_argument("-v", "--verbose", action="store_true", help="Print additional information when adding, or listing discs, or when searching.")
 args = parser.parse_args()
 
 #-------------------------------------------------------------------------------
