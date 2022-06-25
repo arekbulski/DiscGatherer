@@ -132,13 +132,6 @@ if args.add:
 	def select(kv):
 		(k,v) = kv
 		return k in ["DEVNAME", "DEVTYPE", "ID_CDROM_MEDIA_BD", "ID_CDROM_MEDIA_STATE", "ID_CDROM_MEDIA_SESSION_COUNT", "ID_FS_LABEL", "ID_FS_LABEL_ENC", "ID_FS_TYPE", "ID_FS_VERSION", "ID_FS_USAGE", "ID_FS_UUID", "ID_FS_UUID_ENC", "ID_FS_VOLUME_SET_ID", "ID_FS_VOLUME_ID", "ID_FS_LOGICAL_VOLUME_ID", "ID_FS_APPLICATION_ID", "ID_FS_BOOT_SYSTEM_ID"]
-	# TODO: Remove this later on.
-	items = {k:v for (k,v) in map(parse, outputlines)}
-	if args.verbose:
-		print("Interrogating the disc drive yielded following (ALL ENTRIES): ")
-		pprint.pprint(items)
-		print()
-	# END TODO
 	items = {k:v for (k,v) in filter(select, map(parse, outputlines))}
 	if args.verbose:
 		print("Interrogating the disc drive yielded following (among others): ")
