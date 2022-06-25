@@ -1,4 +1,4 @@
-# This is the DiscGatherer software. Its purpose is to help you manage your collection of CD DVD and Bluray dics. Stay tuned.
+# This is the DiscGatherer software. Its purpose is to help you manage your collection of CD DVD and Bluray dics.
 
 #-------------------------------------------------------------------------------
 # Imports
@@ -22,23 +22,23 @@ if os.path.exists(databasename):
 	collection = bson.loads(serializeddata)
 
 #-------------------------------------------------------------------------------
-# CLI syntax is extensive.
+# CLI syntax is extensive. Learn it.
 
-description = "This is the DiscGatherer software. Its purpose is to help you manage your collection of CD DVD and Bluray dics. The default way of using this program is through the CLI command-line. This covers both listing your discs, adding them, searching for specific files, etc. Most operations can only be done using CLI syntax. Learn it."
+description = "This is the DiscGatherer software. Its purpose is to help you manage your collection of CD DVD and Bluray dics. The only way of using this program so far is through the CLI command-line. This covers both listing your discs, adding them, searching for specific files, etc. The operations can only be done using CLI syntax. Learn it."
 parser = argparse.ArgumentParser(description=description, add_help=False)
 parser.add_argument("-h", "--help", action="help", help="Display documentation.")
-parser.add_argument("-a", "--add", action="store_true", help="Add /dev/sr0 disc to your collection. Can be verbose, in which case you should use less command.")
+parser.add_argument("-a", "--add", action="store_true", help="Add /dev/sr0 disc to your collection. Can be verbose. If no label is provided, the label will be detected from the actual disc.")
 parser.add_argument("-L", "--label", action="store", help="Use provided label instead of detecting it from the actual disc. Note that the provided label must be in quotes.")
 parser.add_argument("-b", "--brief", action="store_true", help="Briefly list all discs. Can be verbose.")
-parser.add_argument("-l", "--list", action="store_true", help="List all discs, folders, and files in your collection. Ideal for grep. Can be verbose. Whether you use verbose mode or not, you should use less or grep command.")
+parser.add_argument("-l", "--list", action="store_true", help="List all discs, folders, and files in your collection. Ideal for less or grep. Can be verbose.")
 parser.add_argument("-r", "--remove", action="store", help="Remove a disc under given ID. The IDs are displayed in both brief and listing modes.")
-parser.add_argument("-s", "--search", action="store", help="Search for given case insensitive words in your collection. More than one word needs to be provided in quotes.")
+parser.add_argument("-s", "--search", action="store", help="Search for given case insensitive words in your collection. If there is more than one word, they need to be provided in quotes.")
 parser.add_argument("-S", "--strict", action="store_true", help="Modify how search mode works. Strict search should yield less false positives than a normal search mode.")
-parser.add_argument("-v", "--verbose", action="store_true", help="Print additional information when adding, or listing discs, or when searching.")
+parser.add_argument("-v", "--verbose", action="store_true", help="Print additional information when adding, or when listing discs, or when searching.")
 args = parser.parse_args()
 
 #-------------------------------------------------------------------------------
-# Common functions that are used by more than one mode.
+# Common functions that are perhaps used by more than one mode.
 
 # This function converts file sizes into a human readable format like "123.4 KB"
 def formatsize(size):
@@ -55,27 +55,31 @@ def formatsize(size):
 	else:
 		return f"{size:.1f} {suffixes[magnitude]}"
 
-# This function computes the indentation, four spaces per level.
+# This function computes the indentation, four spaces per level of indentation.
 def indent(level):
 	return " " * 4 * level
 
-# This function prints out folders, recursively.
+# This function prints out folders (and files), recursively.
 def walk_print(entries, indentlevel):
 	# Displays sub-files before sub-folders.
 	for (entryname,entry) in entries.items():
 		if entry["type"] == "file":
+			# In verbose mode, it also displays sizes and mtimes.
 			if args.verbose:
 				size = formatsize(entry["size"])
 				mtime = datetime.datetime.utcfromtimestamp(entry["mtime"]).isoformat(sep=" ")
 				print(f"{indent(indentlevel)}a file {entryname} [size: {size}] [modified: {mtime}]")
+			# Without verbose mode, it just displays the name.
 			else:
 				print(f"{indent(indentlevel)}a file {entryname}")
 	# Displays sub-files before sub-folders.
 	for (entryname,entry) in entries.items():
 		if entry["type"] == "folder":
+			# In verbose mode, it also displays sizes and mtimes.
 			if args.verbose:
 				size = formatsize(entry["size"])
 				print(f"{indent(indentlevel)}a folder {entryname} [size: {size}]:")
+			# Without verbose mode, it just displays the name.
 			else:
 				print(f"{indent(indentlevel)}a folder {entryname}:")
 			walk_print(entry["entries"], indentlevel+1)
@@ -93,6 +97,7 @@ def contains(subwords, searchin, strict):
 	else:
 		return all(subword in searchin for subword in subwords.split())
 
+# This function is used in search mode.
 def walk_search(entries):
 	# The `entries` formal parameter is a dictionary. Its keys are file/folder names, while the dict values are either dict(type="file", ...) or dict(type="folder", ...).
 	output = {}
@@ -122,7 +127,7 @@ if args.add:
 		print()
 		exit(1)
 
-	# First thing: lets interrogate `udevadm info` about the `/dev/sr0` disc. This command interrogates both the optical drive as well as the optical disc inside of it. It returns a lot of data about both, that needs to be parsed and sifted through.
+	# First thing: lets interrogate `udevadm info` about the `/dev/sr0` disc. This command interrogates both the optical drive as well as the optical disc inside of it. It returns a lot of data about both that needs to be parsed and sifted through.
 	sp = subprocess.run(["udevadm","info","-q","property","-x","-n","sr0"], stdout=subprocess.PIPE)
 	output = sp.stdout.decode()
 	outputlines = output.splitlines()
@@ -170,9 +175,10 @@ if args.add:
 				branch = walk_adding(pathname)
 				size = sum(f["size"] for f in branch.values())
 				entries[entryname] = dict(type="folder", size=size, entries=branch, atime=entrystat.st_atime, mtime=entrystat.st_mtime, ctime=entrystat.st_ctime)
-			# TODO: You should index symlinks as well.
+			# TODO: We should index symbolic links as well.
 		return entries
 
+	# Entire tree is indexed from here.
 	tree = walk_adding(fspath)
 	size = sum(f["size"] for f in tree.values())
 	disc = dict(type="disc", label=disclabel, items=items, content=tree, size=size)
@@ -181,6 +187,7 @@ if args.add:
 		walk_print(disc["content"], 1)
 		print()
 
+	# Disc IDs are basically incremental, next one is the max of existing ones plus one. Note that removing discs from database usually does not affect ID assignments. Usually.
 	nextid = 1 if len(collection)==0 else max(map(int, collection.keys()))+1
 	collection[nextid] = disc
 	autosave = True
@@ -192,7 +199,7 @@ if args.add:
 # Brief listing mode.
 
 if args.brief:
-	# Displays all discs briefly (only IDs and labels and optionally sizes).
+	# Displays all discs briefly (only IDs and labels, and optionally sizes).
 	for (entryid,entry) in collection.items():
 		if args.verbose:
 			size = formatsize(entry["size"])
@@ -216,8 +223,6 @@ if args.list:
 			print(f"[ID {entryid}] {entry['type']} {entry['label']}")
 			walk_print(entry["content"], 1)
 			print()
-
-# TODO: How about using colorama to display names in bold or color?
 
 #-------------------------------------------------------------------------------
 # Searching recursively for substrings/subwords.
@@ -250,18 +255,6 @@ if args.remove:
 
 #-------------------------------------------------------------------------------
 # TODO: Renaming an entry label.
-
-#-------------------------------------------------------------------------------
-# Here be dragons?
-
-# TODO: What to do when there is more than one optical drive or disc?
-# Possible answer: Maybe just ignore the other drives and use the first?
-# TODO: What does happen when there is no disc in the optical drive?
-# Already handled. It just aborts.
-# TODO: What does happen when there is no optical drive at all?
-# Needs testing.
-# TODO: What does happen when you try to add Audio CD instead?
-# Needs testing.
 
 #-------------------------------------------------------------------------------
 # Storing disc collection to disk.
