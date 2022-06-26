@@ -64,7 +64,7 @@ def walk_print(entries, indentlevel):
 	# Displays sub-files before sub-folders.
 	for (entryname,entry) in entries.items():
 		if entry["type"] == "file":
-			# In verbose mode, it also displays sizes and mtimes.
+			# In verbose mode, it also displays (file) sizes and mtimes.
 			if args.verbose:
 				size = formatsize(entry["size"])
 				mtime = datetime.datetime.utcfromtimestamp(entry["mtime"]).isoformat(sep=" ")
@@ -75,7 +75,7 @@ def walk_print(entries, indentlevel):
 	# Displays sub-files before sub-folders.
 	for (entryname,entry) in entries.items():
 		if entry["type"] == "folder":
-			# In verbose mode, it also displays sizes and mtimes.
+			# In verbose mode, it also displays (folder) sizes.
 			if args.verbose:
 				size = formatsize(entry["size"])
 				print(f"{indent(indentlevel)}a folder {entryname} [size: {size}]:")
