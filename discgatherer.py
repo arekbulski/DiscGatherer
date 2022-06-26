@@ -44,8 +44,8 @@ args = parser.parse_args()
 def formatsize(size):
 	magnitude = 0
 	suffixes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
-	for s in suffixes:
-		if size > 1000:
+	for _ in suffixes[1:]:
+		if size >= 1000:
 			size /= 1000
 			magnitude += 1
 		else:
