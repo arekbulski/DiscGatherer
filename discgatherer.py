@@ -86,20 +86,23 @@ def walk_print(entries, indentlevel):
 
 # This function decides whether a file or folder name matches a search criteria.
 def contains(subwords, searchin, strict):
+	# The search is case insensitive, of course.
 	subwords = subwords.lower()
 	searchin = searchin.lower()
+	# In strict mode, every searched-for word must match exactly. For example, "girl" is not in "girlfriend", not in strict mode anyway.
 	if strict:
 		separators = "`~!@#$%^&*()-_=+[{]}\\|;:\'\",<.>/?"
 		for sep in separators:
 			searchin = searchin.replace(sep, " ")
 		searchinparts = searchin.split()
 		return all(subword in searchinparts for subword in subwords.split())
+	# In normal mode, every searched-for word must be a substring in the file name. For example, "girl" is a match in "girlfriend".
 	else:
 		return all(subword in searchin for subword in subwords.split())
 
 # This function is used in search mode.
 def walk_search(entries):
-	# The `entries` formal parameter is a dictionary. Its keys are file/folder names, while the dict values are either dict(type="file", ...) or dict(type="folder", ...).
+	# The `entries` formal parameter is a dictionary. Its keys are file/folder names, while its values are either dict(type="file", ...) or dict(type="folder", ...).
 	output = {}
 	for (entryname,entry) in entries.items():
 		# A file is included in search results on a simple basis: either the file names contains all search words or not. This is rather straightforward.
@@ -209,7 +212,7 @@ if args.brief:
 	print()
 
 #-------------------------------------------------------------------------------
-# Listing discs mode.
+# Full listing mode.
 
 if args.list:
 	# Displays all discs, recursively.
